@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Chat Example Using STOMP Over WebSockets</title>
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link href="/static/bootstrap.min.css" rel="stylesheet">
+    <link href="/static/bootstrap.min.responsive.css" rel="stylesheet">
+    <style type="text/css">
+        body {
+            padding-top: 40px;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+    <div class="navbar-inner">
+        <div class="container">
+            <a class="brand" href="#">Stomp Over WebSocket Chat Example</a>
+        </div>
+    </div>
+</div>
+
+<div class="container-fluid">
+    <div class="row-fluid">
+        <div class="span6">
+            <div id="connect">
+                <div class="page-header">
+                    <h2>Server Login</h2>
+                </div>
+                <form class="form-horizontal" id='connect_form'>
+                    <fieldset>
+                        <div class="control-group">
+                            <label>WebSocket URL</label>
+                            <div class="controls">
+                                <input type="token" id="token" value="eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxLCJleHAiOjE1NzE0NTUxMDQuOTA4fQ.w-ldFrnj4D_mid-Sqaud5E5Sds_IDr-iPg6ohjZn9_4" type="text">
+{#                                <input type="token" id="token" value="eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxNjUsImV4cCI6MTU3MTM2NjY2NS4wMDl9.epPTpcYN0NHoUOGU_4ezbeEr4AFKcbsz4WT0rzd7BYo" type="text">#}
+                                <input name=url id='connect_url' value='ws://127.0.0.1:8006/stomp/' type="text">
+{#                                <input name=url id='connect_url' value='ws://192.168.1.213:8002/stomp/' type="text">#}
+{#                                <input name=url id='connect_url' value='ws://devscm.ff.meishilian360.com/stomp/' type="text">#}
+                            </div>
+                        </div>
+                        <div class="form-actions">
+                            <button id='connect_submit' type="submit" class="btn btn-large btn-primary">Connect</button>
+                        </div>
+                    </fieldset>
+                </form>
+            </div>
+            <div id="connected" style="display:block">
+                <div class="page-header">
+                    <h2>Chat Room</h2>
+                </div>
+                <div id="messages1">
+                </div>
+                <div class="control-group">
+                    <label>Destination</label>
+                    <div class="controls">
+                        <input id='destination1' placeholder="Destination" value="/msg/push/234/"
+                               type="text">
+                        <button id='destination_submit1' type="button" class="btn btn-large btn-primary">Destination
+                        </button>
+                    </div>
+                </div>
+                <form class="well form-search" id='send_form1'>
+                    <button class="btn" type="button" id='disconnect1' style="float:right">Disconnect</button>
+                    <input class="input-medium" id='send_form_input1' placeholder="Type your message here"
+                           class="span6"/>
+                    <button class="btn" type="submit">Send</button>
+                </form>
+            </div>
+
+            <div id="connected2" style="display:block">
+                <div class="page-header">
+                    <h2>Chat Room 2</h2>
+                </div>
+                <div id="messages2">
+                </div>
+                <div class="control-group">
+                    <label>Destination</label>
+                    <div class="controls">
+                        <input id='destination2' placeholder="Destination" value="/topic/2/"
+                               type="text">
+                        <button id='destination_submit2' type="button" class="btn btn-large btn-primary">Destination
+                        </button>
+                    </div>
+                </div>
+                <form class="well form-search" id='send_form2'>
+                    <button class="btn" type="button" id='disconnect2' style="float:right">Disconnect</button>
+                    <input class="input-medium" id='send_form_input2' placeholder="Type your message here"
+                           class="span6"/>
+                    <button class="btn" type="submit">Send</button>
+                </form>
+            </div>
+
+        </div>
+        <div class="span4">
+            <div class="page-header">
+                <h2>Debug Log</h2>
+            </div>
+            <pre id="debug"></pre>
+        </div>
+    </div>
+</div>
+
+<!-- Scripts placed at the end of the document so the pages load faster -->
+<script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+<script src="/static/stomp.js"></script>
+<script>//<![CDATA[
+$(document).ready(function () {
+    t = null;
+    dt = document.title;
+    window.onfocus = function () {
+        // 切换到页面执行事件
+        if (t){
+            clearInterval(t);
+            document.title = dt;
+        }
+    };
+
+
+    Notification.requestPermission(function (status) {
+        console.log(status); // 仅当值为 "granted" 时显示通知
+
+    });
+
+    if (window.WebSocket) {
+        var client, destination;
+
+        $('#connect_form').submit(function () {
+            var url = $("#connect_url").val();
+
+            client = Stomp.client(url);
+
+            // this allows to display debug logs directly on the web page
+
+            // the client is notified when it is connected to the server.
+
+            conn = function () {
+                client = Stomp.client(url);
+                client.debug = function (str) {
+                    $("#debug").append(str + "\n");
+                };
+                var headers = {
+                    "Authorization": $("#token").val()
+                }
+                client.connect(headers, function (frame) {
+                    client.debug("connected to Stomp");
+                    $('#connect').fadeOut({duration: 'fast'});
+                    $('#connected').fadeIn();
+                }, function (frame) {
+                    console.log(frame);
+                    console.log("failed connected");
+                    {#conn();#}
+                });
+            }
+
+            conn();
+
+            return false;
+        });
+
+        $("#destination_submit1").click(function () {
+            destination = $("#destination1").val();
+            client.subscribe(destination, function (message) {
+                {#$("#messages1").append("<p>" + message.body + "</p>\n");#}
+                var data = JSON.parse(message.body);
+                var n = new Notification(data.title, {
+                    body: data.desc,
+                    tag: "1111111111",
+                }); // 显示通知
+                console.log(n)
+                var audio = document.createElement("audio");
+                audio.url = data.audio;
+                n.onshow = function () {
+                    setTimeout(n.close.bind(n), 5000);
+                }
+                audio.play();
+                n.onclick = function (){
+                    {#window.location.href = #}
+                    window.open("http://www.baidu.com")
+                }
+                var inx = 0;
+                t = setInterval(function () {
+                    document.title = "您有一条新消息".substring(inx);
+                    inx += 1;
+                    if (inx >= 8) {
+                        inx = 0;
+                    }
+                }, 300)
+            });
+        })
+        $('#disconnect1').click(function () {
+            client.disconnect(function () {
+                $('#connected').fadeOut({duration: 'fast'});
+                $('#connect').fadeIn();
+                $("#messages1").html("")
+            });
+            return false;
+        });
+
+        $('#send_form1').submit(function () {
+            var text = $('#send_form_input1').val();
+            if (text) {
+                client.send(destination, {}, text);
+                $('#send_form_input1').val("");
+            }
+            return false;
+        });
+
+        $("#destination_submit2").click(function () {
+            destination = $("#destination2").val();
+            client.subscribe(destination, function (message) {
+                $("#messages2").append("<p>" + message.body + "</p>\n");
+            });
+        })
+        $('#disconnect2').click(function () {
+            client.disconnect(function () {
+                $('#connected').fadeOut({duration: 'fast'});
+                $('#connect').fadeIn();
+                $("#messages2").html("")
+            });
+            return false;
+        });
+
+        $('#send_form2').submit(function () {
+            var text = $('#send_form_input2').val();
+            if (text) {
+                client.send(destination, {}, text);
+                $('#send_form_input2').val("");
+            }
+            return false;
+        });
+
+    } else {
+        $("#connect").html("\
+            <h1>Get a new Web Browser!</h1>\
+            <p>\
+            Your browser does not support WebSockets. This example will not work properly.<br>\
+            Please use a Web Browser with WebSockets support (WebKit or Google Chrome).\
+            </p>\
+        ");
+    }
+});
+//]]></script>
+
+</body>
+</html>
