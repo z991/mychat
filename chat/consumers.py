@@ -1,9 +1,12 @@
-from asgiref.sync import async_to_sync
-from channels.generic.websocket import WebsocketConsumer
-from channels.generic.websocket import AsyncWebsocketConsumer
 import json
-from chat.models import MessageContent
 from datetime import datetime
+
+from asgiref.sync import async_to_sync
+from channels.generic.websocket import AsyncWebsocketConsumer
+from channels.generic.websocket import WebsocketConsumer
+
+from chat.models import MessageContent
+
 
 class ChatConsumer(WebsocketConsumer):
 
@@ -28,7 +31,6 @@ class ChatConsumer(WebsocketConsumer):
         text_data_json = json.loads(text_data)
         message = text_data_json["message"]
         user = self.scope["user"]
-        print('message===', message)
         ret = MessageContent.objects.create(**{"user": user, "message": message})
         # Send message to room group
         async_to_sync(self.channel_layer.group_send)(
@@ -75,7 +77,6 @@ class AsyncChatConsumer(AsyncWebsocketConsumer):
         :param bytes_data:
         :return:
         """
-        user = self.scope["user"]
         text_data_json = json.loads(text_data)
         message = text_data_json['message']
         # ret = MessageContent.objects.create(**{"user": user, "message": message})
